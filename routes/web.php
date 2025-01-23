@@ -4,9 +4,9 @@ use App\Http\Controllers\GoogleAuthController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('test');
 });
 
-Route::get('/auth/redirect', [GoogleAuthController::class, 'redirect']);
+Route::get('/auth/redirect', [GoogleAuthController::class, 'redirectToGoogleAuthorization'])->name('auth.request');
 
-Route::get('/auth/callback', [GoogleAuthController::class, 'callback']);
+Route::get('/api/auth/google/callback', [GoogleAuthController::class, 'handleGoogleCallback']);

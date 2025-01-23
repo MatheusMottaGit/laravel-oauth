@@ -2,31 +2,30 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\User;
-use Illuminate\Support\Facades\Auth;
-use Laravel\Socialite\Facades\Socialite;
+use Http;
 
 class GoogleAuthController extends Controller
 {
-    public function redirect() {
-        return Socialite::driver('google')->redirect();
+    public function redirectToGoogleAuthorization() {
+        $authorizationParams = http_build_query([
+            'client_id' => env('GOOGLE_CLIENT_ID'),
+            'redirect_uri' => env('GOOGLE_REDIRECT_URL'),
+            'response_type' => 'code',
+            'scope' => 'email profile',
+        ]);
+        
+        return redirect('https://accounts.google.com/o/oauth2/v2/auth?' . $authorizationParams);
     }
 
-    public function callback() {
-        $googleUser = Socialite::driver('google')->user();
+    public function handleGoogleCallback() {
+        $accessTokenResponse = Http::post('https://oauth2.googleapis.com/token', [
+            'code' => request()->input('code'),
+            'client_id' => env('GOOGLE_CLIENT_ID'),
+            'client_secret' => env('GOOGLE_CLIENT_SECRET'),
+            'redirect_uri' => env('GOOGLE_REDIRECT_URL'),
+            'grant_type'=> 'authorization_code'
+        ]);
 
-        $userExists = User::where('email', $googleUser->email)->first();
-
-        if (!$userExists) {
-            $user = User::updateOrCreate([
-                'google_id' => $googleUser->id,
-                'name' => $googleUser->name,
-                'email' => $googleUser->email
-            ]);
-
-            Auth::login($user);
-        }else{
-            Auth::login($userExists);
-        }
+        return response()->json($accessTokenResponse->json());
     }
 }
