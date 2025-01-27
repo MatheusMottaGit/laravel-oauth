@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Http;
 
 class GoogleAuthController extends Controller
@@ -29,8 +30,18 @@ class GoogleAuthController extends Controller
 
         $accessToken = $accessTokenResponse->json()['access_token'];
 
-        $user = Http::withToken($accessToken)->get('https://www.googleapis.com/oauth2/v1/userinfo');
+        $googleUser = Http::withToken($accessToken)->get('https://www.googleapis.com/oauth2/v1/userinfo');
 
-        return response()->json($user);
+        $userExists = User::where('email', $googleUser['email'])->first();
+
+        if(!$userExists) {
+            User::create([
+                // 'id' => $googleUser['id'],
+                'name' => $googleUser['name'],
+                'email' => $googleUser['email']
+            ]);
+        }
+
+        return response()->json(['message' => 'Saved in database!', 'user' => $googleUser->json()]);
     }
 }
